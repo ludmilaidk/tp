@@ -1,0 +1,15 @@
+package entidades;
+
+public class Contratado extends Empleado {
+    private double valorHora;
+    public Contratado(String nombre, int legajo, boolean asignado,
+                      int cantRetrasos, double valorHora){
+        super(nombre, legajo, asignado, cantRetrasos);
+        this.valorHora= valorHora;
+
+    }
+    @Override
+    public double calcularCosto(double cantDias){
+        return cantDias* valorHora;
+    }
+}
