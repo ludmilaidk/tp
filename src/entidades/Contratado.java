@@ -10,6 +10,7 @@ public class Contratado extends Empleado {
     }
     @Override
     public double calcularCosto(double cantDias){
-        return cantDias* valorHora;
+        return cantDias* valorHora * 8; //consideramos que trabaja al menos 8hs por dia
+
     }
 }

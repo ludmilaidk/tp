@@ -13,6 +13,8 @@ public class PlantaPermanente extends Empleado {
 
     @Override
     public double calcularCosto(double cantDias){
-        return cantDias*valorDia;
+        // Medio día se cobra como día completo
+        double diasCobrados = (cantDias < 1.0) ? 1.0 : cantDias;
+        return valorDia * diasCobrados;
     }
 }

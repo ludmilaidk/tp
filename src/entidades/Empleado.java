@@ -14,13 +14,16 @@ public abstract class Empleado {
     }
 
     public void asignar(){
-
+        asignado = !asignado; // alterna entre true y false
     }
 
     public void registrarRetraso(){
-
+        cantRetrasos++;
     }
 
     public abstract double calcularCosto(double cantDias);
 
+    public int getLegajo(){
+        return this.legajo;
+    }
 }
