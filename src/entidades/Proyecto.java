@@ -12,12 +12,12 @@ public class Proyecto {
     private LocalDate fechaFinalizacion;
     private double costoEstimado;
     private double valorFinal;
-    private int clienteAsociado;
+    private String clienteAsociado;
     private HashMap<Integer, Tarea> historial;
     private boolean huboRetrasos;
 
     public Proyecto(int codigo, String estado, String vivienda, HashMap<String, Tarea> tareas,
-    LocalDate fechaInicio, LocalDate fechaEstimada, LocalDate fechaFinalizacion, double costoFinal, double valorFinal, int clienteAsociado){
+    LocalDate fechaInicio, LocalDate fechaEstimada, LocalDate fechaFinalizacion, double costoFinal, double valorFinal, String clienteAsociado){
         this.codigo=codigo;
         this.estado = Estado.pendiente; //por defecto
         this.vivienda=vivienda;
@@ -30,6 +30,18 @@ public class Proyecto {
         this.clienteAsociado=clienteAsociado;
         this.historial=new HashMap<>();
         this.huboRetrasos=false;
+    }
+
+    public void registrarRetrasoTarea(double dias, String nombre){
+        Tarea tarea = tareas.get(nombre);
+
+        if (tarea.getEmpleadoAsociado() != null && tarea != null) {
+            tarea.registrarRetraso(dias);
+            this.huboRetrasos=true;
+
+        } else{
+            System.out.println("No existe una tarea con el nombre: " + nombre);
+        }
     }
 
     public boolean asignarEmpleado(String nombreTarea, Empleado empleado){
@@ -52,12 +64,17 @@ public class Proyecto {
         if (!estado.equals(Estado.finalizado)) {
             Tarea nueva = new Tarea(nombreTarea, descripcion, cantDias,0, false, null, 0, 0);
             tareas.put(nombreTarea, nueva);
-            ////este de abajo lo borramos por ahora
-            //valorFinal += nueva.calcularCostoFinal(); // Se suma el costo de la tarea
+
+            //al agregar una tarea debemos incrementar la fecha estimada, la fecha real se incrementa al finalizar la tarea
+            // 🔹 Actualizar la fecha estimada de finalización
+            if (fechaEstimada != null) {
+                fechaEstimada = fechaEstimada.plusDays((long)cantDias);
+            }
 
             //cada vez q agregamos una tarea, revisamos si todas tienen empleado
             actualizarEstado();
         }
+
     }
 
     // Actualiza el estado del proyecto según las tareas asignadas.
@@ -105,10 +122,16 @@ public class Proyecto {
         if (tarea != null && !tarea.isFinalizado()) {
             tarea.registrarFinalizado(); //este de aca se encarga de desasignar el empleado
             valorFinal += tarea.calcularCostoFinal(); // O(1)
-
             historial.put(tarea.getEmpleadoAsociado().getLegajo(), tarea); //guardamos en historial
-            actualizarEstadoFinalizacion(); //reevalua si ya se puede poner como finalizado al terminar esta tarea
 
+            //si aun no tengo fechaFinalizacion entonces sumo los dias de la tarea a la fecha de inicio
+            //sino lo sumo a la fecha de finalizacion
+            if (fechaFinalizacion == null) {
+                fechaFinalizacion = fechaInicio.plusDays((long)tarea.duracionTotal());
+            } else {
+                fechaFinalizacion = fechaFinalizacion.plusDays((long)tarea.duracionTotal());
+            }
+            actualizarEstadoFinalizacion(); //reevalua si ya se puede poner como finalizado al terminar esta tarea
         }
     }
     public double calcularCostoProyecto() {
@@ -145,6 +168,7 @@ public class Proyecto {
     public LocalDate getFechaFinalizacion() { return fechaFinalizacion; }
     public HashMap<String, Tarea> getTareas() { return tareas; }
     public double getValorFinal() { return valorFinal; }
-    public int getClienteAsociado() { return clienteAsociado; }
+    public String getClienteAsociado() { return clienteAsociado; }
+    public void setFechaFinalizacion(LocalDate fechaFinalizacion) { this.fechaFinalizacion = fechaFinalizacion;}
 
 }
