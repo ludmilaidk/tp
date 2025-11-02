@@ -20,6 +20,8 @@ public abstract class Empleado {
     public void registrarRetraso(){
         cantRetrasos++;
     }
+    public boolean isAsignado() {
+        return asignado;
 
     public abstract double calcularCosto(double cantDias);
 
