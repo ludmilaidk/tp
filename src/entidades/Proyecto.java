@@ -171,4 +171,31 @@ public class Proyecto {
     public String getClienteAsociado() { return clienteAsociado; }
     public void setFechaFinalizacion(LocalDate fechaFinalizacion) { this.fechaFinalizacion = fechaFinalizacion;}
 
+    @Override
+    public String toString() {
+        String tareasInfo = "";
+        for (Tarea tarea : tareas.values()) {
+            tareasInfo += tarea.toString() + ", ";
+        }
+        // Quitamos la última coma y espacio si hay tareas
+        if (!tareasInfo.isEmpty()) {
+            tareasInfo = tareasInfo.substring(0, tareasInfo.length() - 2);
+        }
+
+        return "Proyecto{" +
+                "codigo=" + codigo + "\n" +
+                ", estado='" + estado + "\n" +
+                ", vivienda='" + vivienda + "\n" +
+                ", fechaInicio=" + fechaInicio + "\n" +
+                ", fechaEstimada=" + fechaEstimada + "\n" +
+                ", fechaFinalizacion=" + fechaFinalizacion + "\n" +
+                ", costoEstimado=" + costoEstimado + "\n" +
+                ", valorFinal=" + valorFinal + "\n" +
+                ", clienteAsociado='" + clienteAsociado + "\n" +
+                ", huboRetrasos=" + huboRetrasos + "\n" +
+                "  tareas=[\n" + tareasInfo + "  ]\n" +
+                '}';
+    }
+
+
 }

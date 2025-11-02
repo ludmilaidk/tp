@@ -23,7 +23,15 @@ public abstract class Empleado {
 
     public abstract double calcularCosto(double cantDias);
 
-    public int getLegajo(){
+    public Integer getLegajo(){
         return this.legajo;
     }
+
+    public String getNombre() {
+        return nombre;
+    }
+    public int getCantRetrasos(){
+        return cantRetrasos;
+    }
+
 }

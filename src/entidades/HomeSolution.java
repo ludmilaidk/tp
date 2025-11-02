@@ -1,5 +1,6 @@
 package entidades;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Queue;
@@ -269,41 +270,71 @@ public class HomeSolution {
      * Calcula el costo total del proyecto (activo, pendiente o finalizado).
      * @return Costo total acumulado.
      */
-    public double costoProyecto(){
+    public double costoProyecto(Integer numeroProyecto) throws IllegalArgumentException {
+        Proyecto proyecto = proyectos.get(numeroProyecto); // obtenemos el proyecto del HashMap
+        if (proyecto == null) {
+            throw new IllegalArgumentException("No existe un proyecto con ese código.");
+        }
 
+        if (proyecto.getEstado().equals(Estado.pendiente)) {
+            throw new IllegalArgumentException("No se puede calcular el costo de un proyecto pendiente.");
+        }
+
+        return proyecto.calcularCostoProyecto(); // O(1), ya definido en Proyecto
     }
+
 
     /**
      * Devuelve una lista de proyectos finalizados (número y domicilio).
      * @return Lista de tuplas (número, domicilio).
      */
-    public List<Tupla<Integer, String>> proyectosFinalizados(){
-
+    public List<Tupla<Integer, String>> proyectosFinalizados() {
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        for (Proyecto p : proyectos.values()) {
+            if (p.estaFinalizado()) {
+                lista.add(new Tupla<>(p.getCodigo(), p.getVivienda()));
+            }
+        }
+        return lista;
     }
 
     /**
      * Devuelve una lista de proyectos pendientes (aún no iniciados o incompletos).
      * @return Lista de tuplas (número, domicilio).
      */
-    public List<Tupla<Integer, String>> proyectosPendientes(){
-
+    public List<Tupla<Integer, String>> proyectosPendientes() {
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        for (Proyecto p : proyectos.values()) {
+            if (p.getEstado().equals(Estado.pendiente)) {
+                lista.add(new Tupla<>(p.getCodigo(), p.getVivienda()));
+            }
+        }
+        return lista;
     }
+
 
     /**
      * Devuelve una lista de proyectos actualmente activos.
      * @return Lista de tuplas (número, domicilio).
      */
-    public List<Tupla<Integer, String>> proyectosActivos(){
-
+    public List<Tupla<Integer, String>> proyectosActivos() {
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        for (Proyecto p : proyectos.values()) {
+            if (p.getEstado().equals(Estado.activo)) {
+                lista.add(new Tupla<>(p.getCodigo(), p.getVivienda()));
+            }
+        }
+        return lista;
     }
 
     /**
      * Devuelve los empleados que no están asignados a ningún proyecto.
      * @return Arreglo de empleados no asignados.
      */
-    public Object[] empleadosNoAsignados(){
-
+    public Object[] empleadosNoAsignados() {
+        return empleadosDisponibles.toArray();
     }
+
 
     /**
      * Indica si un proyecto ya fue finalizado.
@@ -311,7 +342,8 @@ public class HomeSolution {
      * @return true si está finalizado, false en caso contrario.
      */
     public boolean estaFinalizado(Integer numero){
-
+        Proyecto proyecto=proyectos.get(numero);
+        return proyecto.estaFinalizado();
     }
 
     /**
@@ -320,7 +352,8 @@ public class HomeSolution {
      * @return Cantidad de retrasos.
      */
     public int consultarCantidadRetrasosEmpleado(Integer legajo){
-
+        Empleado empleado= empleados.get(legajo);
+        return empleado.getCantRetrasos();
     }
 
     /**
@@ -328,9 +361,20 @@ public class HomeSolution {
      * @param numero Número o código del proyecto.
      * @return Lista de tuplas (legajo, nombre del empleado).
      */
-    public List<Tupla<Integer, String>> empleadosAsignadosAProyecto(Integer numero){
-
+    public List<Tupla<Integer, String>> empleadosAsignadosAProyecto(Integer numero) {
+        Proyecto proyecto = proyectos.get(numero);
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        if (proyecto != null) {
+            for (Tarea tarea : proyecto.getTareas().values()) {
+                Empleado empleado = tarea.getEmpleadoAsociado();
+                if (empleado != null) {
+                    lista.add(new Tupla<>(empleado.getLegajo(), empleado.getNombre()));
+                }
+            }
+        }
+        return lista;
     }
+
 
     // ============================================================
     // NUEVOS REQUERIMIENTOS
@@ -342,17 +386,24 @@ public class HomeSolution {
      * @return Arreglo de tareas sin asignar.
      */
     public Object[] tareasProyectoNoAsignadas(Integer numero){
-
+        List<Tarea> lista=new ArrayList<>();
+        Proyecto proyecto=proyectos.get(numero);
+        for (Tarea tarea: proyecto.getTareas().values()){
+            if (tarea.getEmpleadoAsociado()==null){
+                lista.add(tarea);
+            }
+        }
+        return lista.toArray();
     }
     /**
-     * Devuelve las tareas no asignadas de un proyecto.
+     * Devuelve las tareas asignadas de un proyecto.
      * @param numero Número o código del proyecto.
      * @return Arreglo de tareas de un proyecto.
      */
     public Object[] tareasDeUnProyecto(Integer numero){
-
+        Proyecto proyecto=proyectos.get(numero);
+        return proyecto.getTareas().values().toArray();
     }
-
 
     /**
      * Consulta el domicilio del proyecto.
@@ -360,7 +411,12 @@ public class HomeSolution {
      * @return Dirección donde se realiza el proyecto.
      */
     public String consultarDomicilioProyecto(Integer numero){
-        
+        Proyecto proyecto= proyectos.get(numero);
+        if (proyecto!=null) {
+            return proyecto.getVivienda();
+        }else{
+            throw new IllegalArgumentException("No existe un proyecto con ese código.");
+        }
     }
 
     /**
@@ -368,18 +424,39 @@ public class HomeSolution {
      * @param legajo Legajo del empleado.
      * @return true si tiene retrasos, false en caso contrario.
      */
-    public boolean tieneRestrasos(String legajo) ;
+    public boolean tieneRetrasos(Integer legajo) {
+        for (Proyecto proyecto : proyectos.values()) { // recorre todos los proyectos
+            for (Tarea tarea : proyecto.getTareas().values()) { // recorre las tareas del proyecto
+                Empleado e = tarea.getEmpleadoAsociado();
+                if (e != null && e.getLegajo().equals(legajo) && tarea.getCantDiasRetrasos() > 0) {
+                    return true; // encontró una tarea con retraso de ese empleado
+                }
+            }
+        }
+        return false; // ninguna tarea con retrasos de ese empleado
+    }
+
 
     /**
      * Devuelve la lista de todos los empleados registrados.
      * @return Lista de tuplas (legajo, nombre del empleado).
      */
-    public List<Tupla<Integer, String>> empleados();
+    public List<Tupla<Integer, String>> empleados() {
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        for (Empleado e : empleados.values()) {
+            lista.add(new Tupla<>(e.getLegajo(), e.getNombre()));
+        }
+        return lista;
+    }
+
     /**
      * Devuelve la informacion generada en el toString.
      * @numero numero de proyecto.
      */
-    public String consultarProyecto(Integer numero);
+    public String consultarProyecto(Integer numero){
+        Proyecto proyecto = proyectos.get(numero);
+        return proyecto.toString();
+    }
 
     public int generarCodigoProyecto(){
         int codigo= contadorDeProyectos;

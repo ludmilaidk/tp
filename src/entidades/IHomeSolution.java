@@ -20,6 +20,13 @@ import java.util.List;
  * tareasDeUnProyecto
  * consultarProyecto
  */
+
+/**
+ * Modificación 25-10
+ * Se agregaron o cambiaron parametros
+ * costoProyecto
+ * tieneRetrasos
+ */
 public interface IHomeSolution {
 
     // ============================================================
@@ -151,10 +158,11 @@ public interface IHomeSolution {
     // ============================================================
 
     /**
-     * Calcula el costo total del proyecto (activo, pendiente o finalizado).
+     *  Calcula el costo total del proyecto (activo, pendiente o finalizado).
+     * @param numero Numero o código del proyecto
      * @return Costo total acumulado.
      */
-    public double costoProyecto() ;
+    public double costoProyecto(Integer numero) ;
 
     /**
      * Devuelve una lista de proyectos finalizados (número y domicilio).
@@ -176,7 +184,7 @@ public interface IHomeSolution {
 
     /**
      * Devuelve los empleados que no están asignados a ningún proyecto.
-     * @return Arreglo de empleados no asignados.
+     * @return Arreglo de empleados no asignados (solo numero de legajo)
      */
     public Object[] empleadosNoAsignados();
 
@@ -231,7 +239,7 @@ public interface IHomeSolution {
      * @param legajo Legajo del empleado.
      * @return true si tiene retrasos, false en caso contrario.
      */
-    public boolean tieneRestrasos(String legajo) ;
+    public boolean tieneRestrasos(Integer legajo) ;
 
     /**
      * Devuelve la lista de todos los empleados registrados.
