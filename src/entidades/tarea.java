@@ -25,7 +25,7 @@ public class Tarea {
     // Método para asignar un empleado a una tarea
     public void asignarEmpleado(Empleado empleado) {
         this.empleadoAsociado = empleado;
-
+        empleado.asignar();
         // Calcular el costo estimado solo cuando se asigna el empleado
         calcularCostoEstimado();
     }
@@ -47,27 +47,28 @@ public class Tarea {
     }
 
     public void registrarFinalizado(){
-        if (!finalizado) {
             calcularCostoTarea(); //nuestro metodo ya sobreescribe a costoTareaFinalizada
-            finalizado = true;
+            this.finalizado = true;
             if (empleadoAsociado != null) {
-                empleadoAsociado.asignar(); // libera al empleado
-
-            }
+                empleadoAsociado.desasignar(); // libera al empleado
         }
     }
+
     //actualiza nuestra variable costoTarea al finalizarse una tarea
     public void calcularCostoTarea(){
         if (empleadoAsociado!=null){
-            double costo = empleadoAsociado.calcularCosto(duracionTotal());
-            costo= costoTarea;
+            this.costoTarea = empleadoAsociado.calcularCosto(duracionTotal());
         }
     }
 
     //solo cuando la tarea este finalizada se llamara a este metodo
     //y entonces evaluara si se debe sumar el extra o no
     public double calcularCostoFinal() {
-        if (empleadoAsociado == null) return 0;
+        if (empleadoAsociado == null){ throw new IllegalArgumentException("no se puede calcular sin empleado");}
+
+        if(costoTarea ==0){
+            calcularCostoTarea();
+        }
 
         // Solo si NO hubo retrasos se abona el 2%
         if (cantDiasRetrasos == 0 && empleadoAsociado instanceof PlantaPermanente) {
@@ -77,12 +78,12 @@ public class Tarea {
     }
 
     public void registrarRetraso(double dias){
-        if (dias > 0) {    //le pasamos los dias de retraso que vamos a registrar y lo valida
-            cantDiasRetrasos += dias;
+            this.cantDiasRetrasos += dias;
+
             if (empleadoAsociado != null) {
                 empleadoAsociado.registrarRetraso();
             }
-        }
+
     }
 
     public double duracionTotal(){
@@ -105,15 +106,6 @@ public class Tarea {
 
     @Override
     public String toString() {
-        return "Tarea{" +
-                "nombre='" + nombre + '\'' +
-                ", duracionTotal=" + duracionTotal() +
-                ", retrasos=" + cantDiasRetrasos +
-                ", finalizado=" + finalizado +
-                ", costoFinal=" + costoTarea +
-                ", costoEstimado=" + costoEstimado +
-                '}';
-    } //no agregué el empleado xq una vez finalizado es null.
-
-
+        return "Tarea{" + "nombre='" + nombre + "}";
+    }
 }

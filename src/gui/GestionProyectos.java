@@ -143,7 +143,13 @@ public class GestionProyectos extends  JPanel{
             public void actionPerformed(ActionEvent actionEvent) {
                 if (seleccionValida()) {
                     String titulo = tareas.getSelectedItem().toString();
-                    panelManager.sistema().finalizarTarea(panelManager.consultarSeleccionado(), titulo);
+                    try {
+                        panelManager.sistema().finalizarTarea(panelManager.consultarSeleccionado(), titulo);
+                    }
+                    catch (Exception ex)
+                    {
+                        JOptionPane.showMessageDialog(null,"La tarea ya estaba finalizada");
+                    }
                 }
                 else{
                     JOptionPane.showMessageDialog(null,"No hay tarea seleccionada");
@@ -176,7 +182,7 @@ public class GestionProyectos extends  JPanel{
                 nuevaTarea.setVisible(true);
                 String titulo=nuevaTarea.getTitulo();
                 String descripcion=nuevaTarea.getDescripcion();
-                String dias=nuevaTarea.getDescripcion();
+                String dias=nuevaTarea.getDias();
                 try{
                     panelManager.sistema().agregarTareaEnProyecto(panelManager.consultarSeleccionado(),
                             titulo,descripcion,Double.parseDouble(dias));
@@ -190,7 +196,7 @@ public class GestionProyectos extends  JPanel{
         costoActualProyecto.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                double costo=panelManager.sistema().costoProyecto();
+                double costo=panelManager.sistema().costoProyecto(panelManager.consultarSeleccionado());
                 JOptionPane.showMessageDialog(null, "El costo actual del proyecto es: " + costo);
             }
         });
@@ -322,7 +328,7 @@ public class GestionProyectos extends  JPanel{
         gestionProyecto.add(empleadosAsignados, gbc);
         gbc.gridx=2;
         gestionProyecto.add(datosProyecto,gbc);
-        gbc.gridx = 3;
+        gbc.gridx = 4;
         gbc.gridy = 9;
         gbc.gridwidth = 2;
         gbc.gridheight = 2;

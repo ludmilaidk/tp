@@ -52,7 +52,7 @@ public class PanelManager {
         if (codigoPantalla==1)
              mostrar(principal);
         if (codigoPantalla==3){
-            gestionEmpleados=gestionEmpleados==null?new GestionEmpleados(this):gestionEmpleados;
+            gestionEmpleados=new GestionEmpleados(this);
             mostrar(gestionEmpleados);
         }
         if (codigoPantalla==2){
@@ -64,11 +64,11 @@ public class PanelManager {
             mostrar(formularioProyecto);
         }
         if (codigoPantalla==5) {
-           listaProyectos = listaProyectos == null ? new ListaProyectos(this) : listaProyectos;
+           listaProyectos = new ListaProyectos(this);
             mostrar(listaProyectos);
         }
         if (codigoPantalla==6) {
-            gestionProyectos= gestionProyectos == null ? new GestionProyectos(this) : gestionProyectos;
+            gestionProyectos= new GestionProyectos(this);
             mostrar(gestionProyectos);
         }
 

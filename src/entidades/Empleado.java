@@ -14,26 +14,28 @@ public abstract class Empleado {
     }
 
     public void asignar(){
-        asignado = !asignado; // alterna entre true y false
+        asignado = true;
+    }
+    public void desasignar(){
+        asignado = false;
     }
 
     public void registrarRetraso(){
         cantRetrasos++;
     }
-    public boolean isAsignado() {
-        return asignado;
 
     public abstract double calcularCosto(double cantDias);
 
-    public Integer getLegajo(){
-        return this.legajo;
-    }
+    public int getLegajo(){return legajo;}
 
-    public String getNombre() {
-        return nombre;
-    }
-    public int getCantRetrasos(){
-        return cantRetrasos;
-    }
+    public String getNombre() {return nombre;}
+
+    public int getCantRetrasos(){return cantRetrasos;}
+
+    public boolean getAsignado(){return asignado;}
+
+    @Override
+    public String toString() {return"";}
+
 
 }

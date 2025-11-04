@@ -13,4 +13,10 @@ public class Contratado extends Empleado {
         return cantDias* valorHora * 8; //consideramos que trabaja al menos 8hs por dia
 
     }
+    @Override
+    public String toString() {
+        return String.valueOf(getLegajo());
+    }
+
+
 }

@@ -1,33 +1,29 @@
 package entidades;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 
-public class HomeSolution {
+public class HomeSolution implements IHomeSolution {
     private HashMap<Integer, Empleado> empleados;
     private HashMap<Integer, Proyecto> proyectos;
     private HashMap<Integer, Cliente> clientes;
-    private Queue<Empleado> empleadosDisponibles;
-    private int contadorDeProyectos=1;
+    private int contadorDeProyectos;
+    private int contadorLegajo;
 
-    public HomeSolution( HashMap<Integer, Empleado> empleados, HashMap<Integer, Proyecto> proyectos, HashMap<Integer, Cliente> clientes, Queue<Empleado> empleadosDisponibles){
-        this.empleados=empleados;
-        this.proyectos=proyectos;
-        this.clientes=clientes;
-        this.empleadosDisponibles=empleadosDisponibles;
-        this.contadorDeProyectos=contadorDeProyectos;
+    public HomeSolution() {
+        this.empleados = new HashMap<>();
+        this.proyectos = new HashMap<>();
+        this.clientes = new HashMap<>();
+        this.contadorDeProyectos = 1;
+        this.contadorLegajo = 1;
     }
 
     /**
      * Registra un empleado con un nombre y un valor base por hora.     *
+     *
      * @param nombre Nombre del empleado.
-     * @param valor Valor de trabajo del empleado.
+     * @param valor  Valor de trabajo del empleado.
      * @throws IllegalArgumentException Si el nombre es nulo o vacío, o el valor es negativo.
      */
-    public void registrarEmpleado(String nombre, double valor) throws IllegalArgumentException{
-        @Override
     public void registrarEmpleado(String nombre, double valor) throws IllegalArgumentException {
         if (nombre == null || nombre.isEmpty()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío.");
@@ -36,22 +32,20 @@ public class HomeSolution {
         if (valor <= 0) {
             throw new IllegalArgumentException("El valor debe ser mayor que 0.");
         }
-
+        int nuevoLegajo = generarLegajoEmpleado();
         // Crear empleado contratado (por hora)
-        Empleado nuevo = new Contratado(nombre, proximoLegajo++, false, 0, valor);
-        empleados.add(nuevo);
+        Empleado empleado = new Contratado(nombre, nuevoLegajo, false, 0, valor);
+        empleados.put(empleado.getLegajo(), empleado);
     }
 
     /**
      * Registra un empleado con nombre, valor y categoría.     *
-     * @param nombre Nombre del empleado.
-     * @param valor Valor de trabajo del empleado.
+     *
+     * @param nombre    Nombre del empleado.
+     * @param valor     Valor de trabajo del empleado.
      * @param categoria Categoría del empleado (por ejemplo, "Junior", "Senior").
      * @throws IllegalArgumentException Si alguno de los parámetros es inválido.
      */
-    
-
-    @Override
     public void registrarEmpleado(String nombre, double valor, String categoria) throws IllegalArgumentException {
         if (nombre == null || nombre.isEmpty()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío.");
@@ -65,23 +59,17 @@ public class HomeSolution {
             throw new IllegalArgumentException("Debe especificar una categoría.");
         }
 
-        categoria = categoria.toLowerCase();
+        categoria = categoria.toUpperCase();
+        if (!categoria.equals("EXPERTO") &&
+                !categoria.equals("INICIAL") &&
+                !categoria.equals("TECNICO")) {
+            throw new IllegalArgumentException("Categoria de empleado no válido: " + categoria);
+        }
 
-        Empleado nuevo;
 
         // Si es de planta permanente
-        if (categoria.equals("inicial") || categoria.equals("técnico") || categoria.equals("experto")) {
-            nuevo = new PlantaPermanente(nombre, proximoLegajo++, false, 0, valor, categoria);
-        }
-        // Si es contratado
-        else if (categoria.equals("contratado") || categoria.equals("c")) {
-            nuevo = new Contratado(nombre, proximoLegajo++, false, 0, valor);
-        } else {
-            throw new IllegalArgumentException("Categoría inválida: " + categoria);
-        }
-
-        empleados.add(nuevo);
-
+        Empleado empleado = new PlantaPermanente(nombre, generarLegajoEmpleado(), false, 0, valor, categoria);
+        empleados.put(empleado.getLegajo(), empleado);
     }
 
     // ============================================================
@@ -91,17 +79,18 @@ public class HomeSolution {
     /**
      * Registra un nuevo proyecto en el sistema.
      *
-     * @param titulos Títulos de las tareas del proyecto.
+     * @param titulos     Títulos de las tareas del proyecto.
      * @param descripcion Descripciones de cada tarea.
-     * @param dias Días estimados de duración de cada tarea.
-     * @param domicilio Domicilio donde se desarrollará el proyecto.
-     * @param cliente Datos del cliente (nombre, mail, teléfono).
-     * @param inicio Fecha de inicio del proyecto (formato YYYY-MM-DD).
-     * @param fin Fecha de finalización estimada (formato YYYY-MM-DD).
+     * @param dias        Días estimados de duración de cada tarea.
+     * @param domicilio   Domicilio donde se desarrollará el proyecto.
+     * @param cliente     Datos del cliente (nombre, mail, teléfono).
+     * @param inicio      Fecha de inicio del proyecto (formato YYYY-MM-DD).
+     * @param fin         Fecha de finalización estimada (formato YYYY-MM-DD).
      * @throws IllegalArgumentException Si los datos son inconsistentes o faltan.
      */
-    public void registrarProyecto(String[] titulos, String[] descripcion, double[] dias, String domicilio, String[] cliente, String inicio, String fin)
-            throws IllegalArgumentException{
+    public void registrarProyecto(String[] titulos, String[] descripcion, double[] dias,
+                                  String domicilio, String[] cliente, String inicio, String fin)
+            throws IllegalArgumentException {
         // validaciones básicas
         if (titulos == null || descripcion == null || dias == null || cliente == null)
             throw new IllegalArgumentException("Faltan datos obligatorios.");
@@ -151,102 +140,91 @@ public class HomeSolution {
 
     /**
      * Asigna un empleado responsable a una tarea específica dentro de un proyecto.     *
+     *
      * @param numero Número o código del proyecto.
      * @param titulo Título de la tarea a asignar.
      * @throws Exception si intenta asignar a una tarea ya asignada o el proyecto esta finalizado
      */
-    public void asignarResponsableEnTarea(Integer numero, String titulo) throws Exception{
-        Proyecto proyecto = buscarProyectoPorNumero(numero);
-    if (proyecto == null) {
-        throw new IllegalArgumentException("No existe un proyecto con número " + numero);
-    }
+    public void asignarResponsableEnTarea(Integer numero, String titulo) throws Exception {
+        Proyecto proyecto = proyectos.get(numero);
+        if (proyecto == null) {
+            throw new IllegalArgumentException("No existe un proyecto con número " + numero);}
 
-    // Verifica que el proyecto no esté finalizado
-    if (proyecto.estaFinalizado()) {
-        throw new Exception("No se puede asignar empleados a un proyecto finalizado.");
-    }
+        if (proyecto.estaFinalizado()) {
+            throw new Exception("No se puede asignar empleados a un proyecto finalizado.");}
 
-    // Buscar tarea
-    Tarea tarea = proyecto.buscarTareaPorTitulo(titulo);
-    if (tarea == null) {
-        throw new IllegalArgumentException("No existe una tarea con el título '" + titulo + "' en el proyecto " + numero);
-    }
+        Tarea tarea = proyecto.getTareas().get(titulo);
+        if ( proyecto.getTareas().get(titulo)== null) {
+            throw new IllegalArgumentException("No existe una tarea con el título '" + titulo + "' en el proyecto " + numero);}
 
-    // Verificar si la tarea ya tiene empleado asignado
-    if (tarea.getEmpleadoAsociado() != null) {
-        throw new Exception("La tarea '" + titulo + "' ya tiene un responsable asignado.");
-    }
+        if (tarea.getEmpleadoAsociado() != null) {
+            throw new Exception("La tarea '" + titulo + "' ya tiene un responsable asignado.");}
 
-    // Buscar el primer empleado disponible
-    Empleado disponible = null;
-    for (Empleado e : empleados) {
-        if (!e.asignar()) {
-            disponible = e;
-            break;
+        // Buscar cualquier empleado disponible
+        Empleado empleadoDisponible = null;
+        for (Empleado e : empleados.values()) {
+            if (!e.getAsignado()) {
+                empleadoDisponible = e;
+                break;
+            }
         }
+        if (empleadoDisponible == null) {
+            throw new Exception("No hay empleados disponibles para asignar.");
+        }
+
+        proyecto.asignarEmpleado(titulo, empleadoDisponible);
     }
 
-    if (disponible == null) {
-        throw new Exception("No hay empleados disponibles para asignar a la tarea.");
-    }
-
-    // Asignar empleado
-    tarea.asignarEmpleado(disponible);
-    disponible.asignar(); // marca como ocupado
-
-
-    }
 
     /**
      * Asigna a la tarea el empleado con menos retrasos acumulados.
      *
      * @param numero Número o código del proyecto.
      * @param titulo Título de la tarea.
-     *@throws Exception si no hay empleados disponibles o la tarea ya fue asignada o el proyecto esta finalizado
+     * @throws Exception si no hay empleados disponibles o la tarea ya fue asignada o el proyecto esta finalizado
      */
-    public void asignarResponsableMenosRetraso(Integer numero, String titulo) throws Exception{
-        //Buscamos el proyecto por número
-    Proyecto proyecto = proyectos.get(numero);
-    if (proyecto == null) {
-        throw new Exception("No existe un proyecto con el número: " + numero);
+    public void asignarResponsableMenosRetraso(Integer numero, String titulo) throws Exception {
+        Proyecto proyecto = proyectos.get(numero);
+        if (proyecto == null) {
+            throw new Exception("No existe un proyecto con el número: " + numero);}
+
+        if (proyecto.estaFinalizado()) {
+            throw new Exception("No se puede asignar, el proyecto ya está finalizado.");}
+
+        Tarea tarea = proyecto.getTareas().get(titulo);
+        if (tarea == null) {
+            throw new Exception("No existe una tarea con el título: " + titulo);}
+
+        if (tarea.getEmpleadoAsociado() != null) {
+            throw new Exception("La tarea ya tiene un empleado asignado.");}
+
+        Empleado empleadoConMenosRetrasos= empleadoConMenosRetrasos();
+
+        if (empleadoConMenosRetrasos == null) {
+            throw new Exception("No hay empleados disponibles para asignar.");}
+
+        // Asignar al empleado a la tarea
+        proyecto.asignarEmpleado(titulo, empleadoConMenosRetrasos);
     }
 
-    //Verificamos que el proyecto no esté finalizado
-    if (proyecto.estaFinalizado()) {
-        throw new Exception("No se puede asignar, el proyecto ya está finalizado.");
-    }
 
-    // Obtenemos la tarea
-    Tarea tarea = proyecto.getTareas().get(titulo);
-    if (tarea == null) {
-        throw new Exception("No existe una tarea con el título: " + titulo);
-    }
 
-    // Verificamos que la tarea no tenga empleado asignado
-    if (tarea.getEmpleadoAsociado() != null) {
-        throw new Exception("La tarea ya tiene un empleado asignado.");
-    }
 
-    // Buscamos al empleado libre con menos retrasos
-    Empleado mejorEmpleado = null;
-    for (Empleado e : empleados) {
-        if (!e.isAsignado()) { 
-            if (mejorEmpleado == null || e.getCantRetrasos() < mejorEmpleado.getCantRetrasos()) {
-                mejorEmpleado = e;
+
+    private Empleado empleadoConMenosRetrasos() {
+        Empleado empleado = null;
+        int minRetrasos = Integer.MAX_VALUE;
+        for (Empleado e : empleados.values()) {
+            if (!e.getAsignado()) {
+                int cantidadRetrasos = e.getCantRetrasos();
+                if (cantidadRetrasos < minRetrasos) {
+                    minRetrasos = cantidadRetrasos;
+                    empleado = e;
+                }
             }
         }
-    }
+        return empleado;}
 
-    if (mejorEmpleado == null) {
-        throw new Exception("No hay empleados disponibles para asignar.");
-    }
-
-    // Asignamos el empleado a la tarea
-    tarea.asignarEmpleado(mejorEmpleado);
-    mejorEmpleado.asignar(); // marca como ocupado
-}
-
-    }
 
     /**
      * Registra un retraso en una tarea de un proyecto.
@@ -329,29 +307,40 @@ public class HomeSolution {
         Proyecto proyecto = proyectos.get(numero);
 
         if (proyecto == null) {
-            throw new IllegalArgumentException("No existe un proyecto con el número: " + numero);
-        }
+            throw new IllegalArgumentException("No existe un proyecto con el número: " + numero);}
+
+        if (proyecto.estaFinalizado()) {
+            throw new IllegalArgumentException("El proyecto ya fue finalizado.");}
 
         //el try/catch es lo unico que me asegura la excepcion en los errores de paseo
         LocalDate fechaFin;
         try {
             fechaFin = LocalDate.parse(fin); // convierte el string a LocalDate
         } catch (Exception e) {
-            throw new IllegalArgumentException("Formato de fecha incorrecto. Debe ser YYYY-MM-DD.");
-        }
+            throw new IllegalArgumentException("Formato de fecha incorrecto. Debe ser YYYY-MM-DD.");}
 
         // Validar que la fecha no sea anterior al inicio
         if (fechaFin.isBefore(proyecto.getFechaInicio())) {
-            throw new IllegalArgumentException("La fecha de finalización no puede ser anterior a la fecha de inicio del proyecto.");
-        }
+            throw new IllegalArgumentException("La fecha de finalización no puede ser anterior a la fecha de inicio.");}
 
+        // Validar que la fecha no sea anterior a la estimada
+        if (fechaFin.isBefore(proyecto.getFechaEstimada())) {
+            throw new IllegalArgumentException("La fecha de finalización no puede ser anterior a la fecha estimada.");}
+
+
+        // liberar empleados asignados a este proyecto
+        for (Tarea tarea: proyecto.getTareas().values()) {
+            proyecto.establecerTareaFinalizada(tarea.getNombre());
+            if (tarea.getEmpleadoAsociado() != null) {
+                Empleado empleado= tarea.getEmpleadoAsociado();
+                empleado.desasignar();
+            }
+
+        }
         // Actualizar los datos del proyecto
         proyecto.setFechaFinalizacion(fechaFin);
+        proyecto.setFinalizado();
 
-        // También marcamos su estado como finalizado, si no lo está ya
-        if (!proyecto.estaFinalizado()) {
-            proyecto.estaFinalizado(); // lo agregamos ahora en Proyecto
-        }
     }
 
 
@@ -359,7 +348,8 @@ public class HomeSolution {
     // REASIGNACIÓN DE EMPLEADOS
     // ============================================================
 
-    /**
+    /** (O)1    !!!!!!!!!!!!!!!!!!#####
+     *
      * Reasigna un empleado a una tarea determinada dentro de un proyecto.
      * Libera al empleado anterior.
      * @param numero Número o código del proyecto.
@@ -367,58 +357,31 @@ public class HomeSolution {
      * @param titulo Título de la tarea.
      * @throw  Exception si no hay empleados disponibles o si no tiene asignado un empleado previamente
      */
-    public void reasignarEmpleadoEnProyecto(Integer numero, Integer legajo, String titulo) throws Exception{
-           //Buscar el proyecto por número
-    Proyecto proyecto = null;
-    for (Proyecto p : proyectos) {
-        if (p.getCodigo() == numero) {
-            proyecto = p;
-            break;
-        }
-    }
-    if (proyecto == null) {
-        throw new Exception("No se encontró un proyecto con el número: " + numero);
-    }
+    public void reasignarEmpleadoEnProyecto(Integer numero, Integer legajo, String titulo) throws Exception {
+        Proyecto proyecto = proyectos.get(numero);
+        if (proyecto == null) {
+            throw new IllegalArgumentException("No existe un proyecto con número " + numero);}
 
-    // Verificar que la tarea exista
-    Tarea tarea = proyecto.getTareas().get(titulo);
-    if (tarea == null) {
-        throw new Exception("No se encontró la tarea con título: " + titulo);
-    }
+        Tarea tarea = proyecto.getTareas().get(titulo);
+        if (tarea == null) {
+            throw new IllegalArgumentException("No existe una tarea con el título '" + titulo + "' en el proyecto " + numero);}
 
-    // Verificar que la tarea ya tenga un empleado asignado
-    Empleado empleadoActual = tarea.getEmpleadoAsociado();
-    if (empleadoActual == null) {
-        throw new Exception("La tarea aún no tiene un empleado asignado. No se puede reasignar.");
-    }
+        Empleado empleadoActual = tarea.getEmpleadoAsociado();
+        if (empleadoActual == null) {
+            throw new Exception("La tarea '" + titulo + "' no tiene un empleado asignado previamente.");}
 
-    // Buscar el nuevo empleado por legajo
-    Empleado nuevoEmpleado = null;
-    for (Empleado e : empleados) {
-        if (e.getLegajo() == legajo) {
-            nuevoEmpleado = e;
-            break;
-        }
-    }
-    if (nuevoEmpleado == null) {
-        throw new Exception("No se encontró un empleado con legajo: " + legajo);
+        Empleado nuevoEmpleado = empleados.get(legajo);
+        if (nuevoEmpleado == null) {
+            throw new IllegalArgumentException("No existe un empleado con legajo " + legajo);}
+
+        if (proyecto.estaFinalizado()) {
+            throw new Exception("No se puede reasignar empleados en un proyecto finalizado.");}
+
+        empleadoActual.desasignar();
+        proyecto.asignarEmpleado(titulo, nuevoEmpleado);
     }
 
-    // Verificar que el nuevo empleado esté disponible
-    if (nuevoEmpleado.isAsignado()) {
-        throw new Exception("El empleado con legajo " + legajo + " ya está asignado a otra tarea.");
-    }
 
-    // Liberar al empleado actual
-    empleadoActual.asignar(); // cambia su estado a no asignado
-
-    // Asignar el nuevo empleado a la tarea
-    tarea.asignarEmpleado(nuevoEmpleado);
-    nuevoEmpleado.asignar(); // marca al nuevo empleado como asignado
-
-    // Actualizar estado del proyecto si es necesario
-    proyecto.actualizarEstado();
-}
 
     /**
      * Reasigna al empleado con menos retrasos acumulados a una tarea.
@@ -427,56 +390,27 @@ public class HomeSolution {
      * @param titulo Título de la tarea.
      * @throw  Exception si no hay empleados disponibles o si no tiene asignado un empleado previamente
      */
-    public void reasignarEmpleadoConMenosRetraso(Integer numero, String titulo)throws Exception{
-         // Buscar el proyecto por número
-    Proyecto proyecto = null;
-    for (Proyecto p : proyectos) {
-        if (p.getCodigo() == numero) {
-            proyecto = p;
-            break;
-        }
+    public void reasignarEmpleadoConMenosRetraso(Integer numero, String titulo) throws Exception {
+        Proyecto proyecto = proyectos.get(numero);
+        if (proyecto == null) {
+            throw new Exception("No existe un proyecto con el número: " + numero);}
+
+        Tarea tarea = proyecto.getTareas().get(titulo);
+        if (tarea == null) {
+            throw new Exception("No existe una tarea con el título: " + titulo);}
+
+        Empleado empleadoActual = tarea.getEmpleadoAsociado();
+        if (empleadoActual == null) {
+            throw new Exception("La tarea '" + titulo + "' no tiene un empleado asignado para reasignar.");}
+
+        Empleado empleadoConMenosRetrasos= empleadoConMenosRetrasos();
+
+        if (empleadoConMenosRetrasos == null) {
+            throw new Exception("No hay empleados disponibles para reasignar.");}
+
+        empleadoActual.desasignar();
+        proyecto.asignarEmpleado(titulo, empleadoConMenosRetrasos);
     }
-    if (proyecto == null) {
-        throw new Exception("No se encontró un proyecto con el número: " + numero);
-    }
-
-    // Buscar la tarea por título
-    Tarea tarea = proyecto.getTareas().get(titulo);
-    if (tarea == null) {
-        throw new Exception("No se encontró la tarea con título: " + titulo);
-    }
-
-    // Verificar que la tarea tenga un empleado asignado
-    Empleado empleadoActual = tarea.getEmpleadoAsociado();
-    if (empleadoActual == null) {
-        throw new Exception("La tarea aún no tiene un empleado asignado. No se puede reasignar.");
-    }
-
-    // Buscar empleado con menos retrasos que esté disponible
-    Empleado empleadoMenosRetrasos = null;
-    for (Empleado e : empleados) {
-        if (!e.isAsignado()) { // solo disponibles
-            if (empleadoMenosRetrasos == null || e.getCantRetrasos() < empleadoMenosRetrasos.getCantRetrasos()) {
-                empleadoMenosRetrasos = e;
-            }
-        }
-    }
-
-    if (empleadoMenosRetrasos == null) {
-        throw new Exception("No hay empleados disponibles para reasignar.");
-    }
-
-    //Liberar al empleado actual
-    empleadoActual.asignar(); // lo desasignamos
-
-    // Asignar el empleado con menos retrasos
-    tarea.asignarEmpleado(empleadoMenosRetrasos);
-    empleadoMenosRetrasos.asignar(); // lo marcamos como asignado
-
-    // Actualizar estado del proyecto
-    proyecto.actualizarEstado();
-}
-
 
 
     // ============================================================
@@ -549,7 +483,14 @@ public class HomeSolution {
      * @return Arreglo de empleados no asignados.
      */
     public Object[] empleadosNoAsignados() {
-        return empleadosDisponibles.toArray();
+        List<Empleado> libres = new ArrayList<>();
+
+        for (Empleado e : empleados.values()) {
+            if (!e.getAsignado()) {
+                libres.add(e);
+            }
+        }
+        return libres.toArray();
     }
 
 
@@ -605,6 +546,13 @@ public class HomeSolution {
     public Object[] tareasProyectoNoAsignadas(Integer numero){
         List<Tarea> lista=new ArrayList<>();
         Proyecto proyecto=proyectos.get(numero);
+
+        if (proyecto == null) {
+            throw new IllegalArgumentException("No existe un proyecto con número " + numero);}
+
+        if (proyecto.estaFinalizado()){
+            throw new IllegalArgumentException("No se pueden obtener tareas no asignadas de un proyecto finalizado.");}
+
         for (Tarea tarea: proyecto.getTareas().values()){
             if (tarea.getEmpleadoAsociado()==null){
                 lista.add(tarea);
@@ -641,11 +589,11 @@ public class HomeSolution {
      * @param legajo Legajo del empleado.
      * @return true si tiene retrasos, false en caso contrario.
      */
-    public boolean tieneRetrasos(Integer legajo) {
+    public boolean tieneRestrasos(Integer legajo) {
         for (Proyecto proyecto : proyectos.values()) { // recorre todos los proyectos
             for (Tarea tarea : proyecto.getTareas().values()) { // recorre las tareas del proyecto
-                Empleado e = tarea.getEmpleadoAsociado();
-                if (e != null && e.getLegajo().equals(legajo) && tarea.getCantDiasRetrasos() > 0) {
+                Empleado empleado = tarea.getEmpleadoAsociado();
+                if (empleado != null && empleado.getLegajo()==legajo && tarea.getCantDiasRetrasos() > 0) {
                     return true; // encontró una tarea con retraso de ese empleado
                 }
             }
@@ -680,5 +628,45 @@ public class HomeSolution {
         contadorDeProyectos++;
         return codigo;
     }
+    public int generarLegajoEmpleado(){
+        int codigo= contadorLegajo;
+        contadorLegajo++;
+        return codigo;
+    }
 
+
+
+
+    @Override
+    public String toString() {
+        // Empleados
+        String empleadosInfo = "";
+        for (Empleado e : empleados.values()) {
+            empleadosInfo += e.toString() + ", ";
+        }
+        if (!empleadosInfo.isEmpty()) {
+            empleadosInfo = empleadosInfo.substring(0, empleadosInfo.length() - 2);
+        }
+
+        // Proyectos
+        String proyectosInfo = "";
+        for (Proyecto p : proyectos.values()) {
+            proyectosInfo += p.toString() + "\n";
+        }
+
+        // Clientes
+        String clientesInfo = "";
+        for (Cliente c : clientes.values()) {
+            clientesInfo += c.toString() + ", ";
+        }
+        if (!clientesInfo.isEmpty()) {
+            clientesInfo = clientesInfo.substring(0, clientesInfo.length() - 2);
+        }
+        return "HomeSolution{\n" +
+                "contadorDeProyectos=" + contadorDeProyectos + "\n" +
+                ", empleados=[" + empleadosInfo + "]\n" +
+                ", proyectos=[\n" + proyectosInfo + "]\n" +
+                ", clientes=[" + clientesInfo + "]\n" +
+                '}';
+    }
 }

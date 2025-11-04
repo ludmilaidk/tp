@@ -17,4 +17,9 @@ public class PlantaPermanente extends Empleado {
         double diasCobrados = (cantDias < 1.0) ? 1.0 : cantDias;
         return valorDia * diasCobrados;
     }
+    @Override
+    public String toString() {
+        return String.valueOf(getLegajo());
+    }
+
 }

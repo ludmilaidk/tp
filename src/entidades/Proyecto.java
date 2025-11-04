@@ -15,6 +15,7 @@ public class Proyecto {
     private String clienteAsociado;
     private HashMap<Integer, Tarea> historial;
     private boolean huboRetrasos;
+    private boolean todasConEmpleado;
 
     public Proyecto(int codigo, String estado, String vivienda, HashMap<String, Tarea> tareas,
     LocalDate fechaInicio, LocalDate fechaEstimada, LocalDate fechaFinalizacion, double costoFinal, double valorFinal, String clienteAsociado){
@@ -30,18 +31,16 @@ public class Proyecto {
         this.clienteAsociado=clienteAsociado;
         this.historial=new HashMap<>();
         this.huboRetrasos=false;
+        this.todasConEmpleado= false;
     }
 
     public void registrarRetrasoTarea(double dias, String nombre){
         Tarea tarea = tareas.get(nombre);
-
-        if (tarea.getEmpleadoAsociado() != null && tarea != null) {
-            tarea.registrarRetraso(dias);
-            this.huboRetrasos=true;
-
-        } else{
-            System.out.println("No existe una tarea con el nombre: " + nombre);
-        }
+        if (tarea == null){ throw new IllegalArgumentException("Tarea no encontrada");}
+        if (tarea.getEmpleadoAsociado()==null){throw new IllegalArgumentException("No se puede registrar retraso si no hay empleado");}
+        tarea.registrarRetraso(dias);
+        this.huboRetrasos=true;
+        //System.out.printf("hubo retrasos?"+ this.huboRetrasos);
     }
 
     public boolean asignarEmpleado(String nombreTarea, Empleado empleado){
@@ -51,7 +50,6 @@ public class Proyecto {
             if (tarea.getEmpleadoAsociado() == null && tarea.getNombre().equals(nombreTarea)) {
                 tarea.asignarEmpleado(empleado);
                 costoEstimado+=tarea.getCostoEstimado();
-                empleado.asignar();
                 actualizarEstado();
                 return true; // empleado asignado exitosamente
             }
@@ -73,6 +71,7 @@ public class Proyecto {
 
             //cada vez q agregamos una tarea, revisamos si todas tienen empleado
             actualizarEstado();
+
         }
 
     }
@@ -84,9 +83,9 @@ public class Proyecto {
     private void actualizarEstado() {
         if (tareas.isEmpty()) {
             estado = Estado.pendiente;
-            return;
+
         } else {
-            boolean todasConEmpleado = true;
+            this.todasConEmpleado = true;
             for (Tarea t : tareas.values()) {
                 if (t.getEmpleadoAsociado() == null) {
                     todasConEmpleado = false;
@@ -99,8 +98,7 @@ public class Proyecto {
                 estado = Estado.pendiente;
             }
         }
-        // Actualizamos la variable huboRetrasos al revisar las tareas
-        this.huboRetrasos = tareas.values().stream().anyMatch(t -> t.getCantDiasRetrasos() > 0);
+
     }
     //este lo usamos al terminar una tarea
     // Actualiza el estado cuando se finaliza una tarea.
@@ -120,9 +118,15 @@ public class Proyecto {
     public void establecerTareaFinalizada(String nombreTarea) {
         Tarea tarea = tareas.get(nombreTarea);
         if (tarea != null && !tarea.isFinalizado()) {
+            if (tarea.getEmpleadoAsociado()==null){
+                throw new IllegalArgumentException("No se puede finalizar una tarea sin empleado");}
+
+            if(tarea.getCantDiasRetrasos()>0){
+                this.huboRetrasos=true;
+            }
+            historial.put(tarea.getEmpleadoAsociado().getLegajo(), tarea); //guardamos en historial
             tarea.registrarFinalizado(); //este de aca se encarga de desasignar el empleado
             valorFinal += tarea.calcularCostoFinal(); // O(1)
-            historial.put(tarea.getEmpleadoAsociado().getLegajo(), tarea); //guardamos en historial
 
             //si aun no tengo fechaFinalizacion entonces sumo los dias de la tarea a la fecha de inicio
             //sino lo sumo a la fecha de finalizacion
@@ -139,17 +143,33 @@ public class Proyecto {
 
         // Si el proyecto está finalizado, usamos el valor final acumulado
         if (estaFinalizado()) {
-            costoProyecto = valorFinal;
+            //System.out.println("ValorFinal: " + valorFinal + ", huboRetrasos: " + huboRetrasos);
+            costoProyecto=valorFinal;
         } else {
             // Si no está finalizado, usamos el costo estimado
             costoProyecto = costoEstimado;
         }
+        //System.out.println(this.huboRetrasos);
+
+        // Recorremos todas las tareas y verificamos si alguna tuvo retrasos
+        boolean huboAlgunRetraso = false;
+        for (Tarea t : tareas.values()) {
+            if (t.getCantDiasRetrasos() > 0) {
+                huboAlgunRetraso = true;
+                break; // en cuanto encontramos una, cortamos el bucle
+            }
+        }
 
         // Aplicamos el porcentaje según si hubo retrasos o no
-        if (huboRetrasos) {
+        if (huboAlgunRetraso) {
+            //System.out.println(costoProyecto);
             costoProyecto *= 1.25;  // +25% si hubo retrasos
+            //System.out.println(costoProyecto);
+
         } else {
             costoProyecto *= 1.35;  // +35% si no hubo retrasos
+            //System.out.println(costoProyecto);
+
         }
 
         return costoProyecto;
@@ -170,6 +190,7 @@ public class Proyecto {
     public double getValorFinal() { return valorFinal; }
     public String getClienteAsociado() { return clienteAsociado; }
     public void setFechaFinalizacion(LocalDate fechaFinalizacion) { this.fechaFinalizacion = fechaFinalizacion;}
+    public void setFinalizado(){this.estado="FINALIZADO";}
 
     @Override
     public String toString() {
